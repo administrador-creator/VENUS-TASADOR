@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Tasador de Coches IA | Valoración Real de Mercado</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0d0d0d;
+    --surface: #161616;
+    --surface2: #1e1e1e;
+    --border: rgba(255,255,255,0.08);
+    --border-hover: rgba(255,255,255,0.18);
+    --text: #f0ede8;
+    --text-muted: #888;
+    --text-dim: #555;
+    --gold: #c9a84c;
+    --gold-light: #e8c96a;
+    --gold-dim: rgba(201,168,76,0.12);
+    --green: #4caf7a;
+    --green-bg: rgba(76,175,122,0.1);
+    --red: #e05252;
+    --red-bg: rgba(224,82,82,0.1);
+    --amber: #e09a3a;
+    --amber-bg: rgba(224,154,58,0.1);
+    --radius: 10px;
+    --radius-lg: 16px;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background subtle grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(201,168,76,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(201,168,76,0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 3rem 1.5rem 4rem;
+  }
+
+  /* Header */
+  .header { text-align: center; margin-bottom: 3rem; }
+
+  .badge-top {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--gold-dim); border: 0.5px solid var(--gold);
+    color: var(--gold); font-size: 11px; font-weight: 500;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 5px 14px; border-radius: 20px;
+    margin-bottom: 1.5rem;
+  }
+
+  .badge-top::before {
+    content: '';
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--gold);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(2rem, 5vw, 3rem);
+    font-weight: 400;
+    line-height: 1.15;
+    color: var(--text);
+    margin-bottom: 1rem;
+  }
+
+  h1 em {
+    font-style: italic;
+    color: var(--gold-light);
+  }
+
+  .header-sub {
+    font-size: 15px;
+    color: var(--text-muted);
+    max-width: 480px;
+    margin: 0 auto;
+    line-height: 1.7;
+  }
+
+  /* Form card */
+  .form-card {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .section-label {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 0.5px;
+    background: var(--border);
+  }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+
+  @media (max-width: 520px) {
+    .grid2, .grid3 { grid-template-columns: 1fr; }
+  }
+
+  .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+  .field:last-child { margin-bottom: 0; }
+
+  label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-muted);
+    letter-spacing: 0.03em;
+  }
+
+  input, select {
+    background: var(--surface2);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 300;
+    padding: 11px 14px;
+    transition: border-color 0.2s;
+    width: 100%;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='7' viewBox='0 0 12 7'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23666' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 36px;
+  }
+
+  input::placeholder { color: var(--text-dim); }
+
+  input:focus, select:focus {
+    outline: none;
+    border-color: var(--gold);
+    box-shadow: 0 0 0 3px rgba(201,168,76,0.08);
+  }
+
+  input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+  /* Button */
+  .btn-tasar {
+    width: 100%;
+    background: var(--gold);
+    color: #0d0d0d;
+    border: none;
+    border-radius: var(--radius);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 500;
+    padding: 14px;
+    cursor: pointer;
+    letter-spacing: 0.02em;
+    transition: background 0.2s, transform 0.1s, opacity 0.2s;
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .btn-tasar:hover { background: var(--gold-light); }
+  .btn-tasar:active { transform: scale(0.99); }
+  .btn-tasar:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* Loading */
+  .loading-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    display: none;
+  }
+
+  .spinner {
+    width: 36px; height: 36px;
+    border: 2px solid var(--border);
+    border-top-color: var(--gold);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 1rem;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-state p { color: var(--text-muted); font-size: 14px; }
+
+  /* Error */
+  .error-msg {
+    background: var(--red-bg);
+    border: 0.5px solid var(--red);
+    border-radius: var(--radius);
+    color: var(--red);
+    font-size: 13px;
+    padding: 12px 16px;
+    margin-top: 1rem;
+    display: none;
+  }
+
+  /* Result */
+  .result-area { display: none; }
+
+  .result-header {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+    margin-bottom: 12px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .result-header::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  }
+
+  .result-car-name {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .result-price {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(2.5rem, 8vw, 4rem);
+    color: var(--gold-light);
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+
+  .result-range {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 1.5rem;
+  }
+
+  .demand-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 4px 12px;
+    border-radius: 20px;
+    margin-bottom: 1.5rem;
+  }
+
+  .demand-badge.high { background: var(--green-bg); color: var(--green); border: 0.5px solid rgba(76,175,122,0.3); }
+  .demand-badge.mid  { background: var(--amber-bg); color: var(--amber); border: 0.5px solid rgba(224,154,58,0.3); }
+  .demand-badge.low  { background: var(--red-bg);   color: var(--red);   border: 0.5px solid rgba(224,82,82,0.3); }
+
+  .metrics-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+
+  @media (max-width: 480px) { .metrics-row { grid-template-columns: 1fr 1fr; } }
+
+  .metric-box {
+    background: var(--surface2);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+  }
+
+  .metric-label { font-size: 11px; color: var(--text-dim); margin-bottom: 4px; }
+  .metric-val { font-size: 17px; font-weight: 500; color: var(--text); }
+
+  /* Pros/cons */
+  .pros-cons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  @media (max-width: 480px) { .pros-cons { grid-template-columns: 1fr; } }
+
+  .pros-box, .cons-box {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem;
+  }
+
+  .pc-title {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .pros-box .pc-title { color: var(--green); }
+  .cons-box .pc-title { color: var(--red); }
+
+  .pc-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+
+  .pc-list li {
+    font-size: 13px;
+    color: var(--text-muted);
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    line-height: 1.5;
+  }
+
+  .pros-box .pc-list li::before { content: '↑'; color: var(--green); flex-shrink: 0; font-size: 11px; margin-top: 2px; }
+  .cons-box .pc-list li::before { content: '↓'; color: var(--red); flex-shrink: 0; font-size: 11px; margin-top: 2px; }
+
+  /* Consejo + Análisis */
+  .info-box {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem;
+    margin-bottom: 12px;
+    font-size: 14px;
+    line-height: 1.75;
+    color: var(--text-muted);
+  }
+
+  .info-box strong {
+    color: var(--gold);
+    font-weight: 500;
+    display: block;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  /* Reset btn */
+  .btn-reset {
+    width: 100%;
+    background: transparent;
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text-muted);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    padding: 12px;
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+    margin-top: 4px;
+  }
+
+  .btn-reset:hover { border-color: var(--border-hover); color: var(--text); }
+
+  /* Footer */
+  .footer {
+    text-align: center;
+    margin-top: 3rem;
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 1.8;
+  }
+
+  .footer a { color: var(--text-dim); text-decoration: none; }
+  .footer a:hover { color: var(--gold); }
+
+  /* Anim */
+  .fade-in { animation: fadeIn 0.4s ease both; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header class="header">
+    <div class="badge-top">IA en tiempo real</div>
+    <h1>Tasa tu coche al<br><em>precio real de mercado</em></h1>
+    <p class="header-sub">Introduce los datos de tu vehículo y nuestra IA te dará una valoración ajustada al mercado español actual.</p>
+  </header>
+
+  <div class="form-card" id="form-card">
+    <div class="section-label">Datos del vehículo</div>
+
+    <div class="grid2">
+      <div class="field">
+        <label>Marca</label>
+        <input type="text" id="marca" placeholder="Volkswagen, Seat, BMW…" />
+      </div>
+      <div class="field">
+        <label>Modelo</label>
+        <input type="text" id="modelo" placeholder="Golf, León, Serie 3…" />
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Versión / Acabado</label>
+      <input type="text" id="version" placeholder="Ej: 1.5 TSI 130cv Style DSG" />
+    </div>
+
+    <div class="grid3">
+      <div class="field">
+        <label>Año matrícula</label>
+        <input type="number" id="anio" placeholder="2019" min="1990" max="2026" />
+      </div>
+      <div class="field">
+        <label>Kilómetros</label>
+        <input type="number" id="kms" placeholder="85000" />
+      </div>
+      <div class="field">
+        <label>Combustible</label>
+        <select id="combustible">
+          <option value="">Selecciona…</option>
+          <option>Gasolina</option>
+          <option>Diésel</option>
+          <option>Híbrido</option>
+          <option>Híbrido enchufable</option>
+          <option>Eléctrico</option>
+          <option>GLP / Gas</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="field">
+        <label>Cambio</label>
+        <select id="cambio">
+          <option value="">Selecciona…</option>
+          <option>Manual</option>
+          <option>Automático</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Estado general</label>
+        <select id="estado">
+          <option value="">Selecciona…</option>
+          <option value="excelente">Excelente – como nuevo</option>
+          <option value="bueno">Bueno – desgaste normal</option>
+          <option value="regular">Regular – desperfectos visibles</option>
+          <option value="malo">Malo – daños importantes</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="field" style="margin-bottom:1.5rem">
+      <label>Extras destacados (opcional)</label>
+      <input type="text" id="extras" placeholder="Techo panorámico, pantalla, sensores, cuero…" />
+    </div>
+
+    <button class="btn-tasar" id="btn-tasar" onclick="tasar()">
+      <span>Calcular tasación</span>
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+
+    <div class="error-msg" id="error-msg"></div>
+  </div>
+
+  <div class="loading-state" id="loading-state">
+    <div class="spinner"></div>
+    <p>Analizando el mercado español…</p>
+  </div>
+
+  <div class="result-area fade-in" id="result-area">
+
+    <div class="result-header">
+      <div class="result-car-name" id="res-car-name"></div>
+      <div class="result-price" id="res-price"></div>
+      <div class="result-range" id="res-range"></div>
+      <div class="demand-badge" id="res-demand"></div>
+      <div class="metrics-row" id="res-metrics"></div>
+    </div>
+
+    <div class="pros-cons">
+      <div class="pros-box">
+        <div class="pc-title">A favor</div>
+        <ul class="pc-list" id="res-pros"></ul>
+      </div>
+      <div class="cons-box">
+        <div class="pc-title">En contra</div>
+        <ul class="pc-list" id="res-cons"></ul>
+      </div>
+    </div>
+
+    <div class="info-box">
+      <strong>Consejo de venta</strong>
+      <span id="res-consejo"></span>
+    </div>
+
+    <div class="info-box">
+      <strong>Análisis de mercado</strong>
+      <span id="res-analisis"></span>
+    </div>
+
+    <button class="btn-reset" onclick="reset()">← Nueva tasación</button>
+  </div>
+
+  <footer class="footer">
+    Tasación orientativa basada en datos de mercado español.<br>
+    Valores de referencia en portales como Coches.net, Autocasión, Wallapop y concesionarios oficiales.<br><br>
+    <span style="color: var(--text-dim)">Powered by IA · 2025</span>
+  </footer>
+
+</div>
+
+<script>
+async function tasar() {
+  const marca = document.getElementById('marca').value.trim();
+  const modelo = document.getElementById('modelo').value.trim();
+  const version = document.getElementById('version').value.trim();
+  const anio = document.getElementById('anio').value.trim();
+  const kms = document.getElementById('kms').value.trim();
+  const combustible = document.getElementById('combustible').value;
+  const cambio = document.getElementById('cambio').value;
+  const estado = document.getElementById('estado').value;
+  const extras = document.getElementById('extras').value.trim();
+  const err = document.getElementById('error-msg');
+
+  err.style.display = 'none';
+
+  if (!marca || !modelo || !anio || !kms || !combustible || !estado) {
+    err.textContent = 'Por favor, completa al menos: marca, modelo, año, kilómetros, combustible y estado.';
+    err.style.display = 'block';
+    return;
+  }
+
+  document.getElementById('btn-tasar').disabled = true;
+  document.getElementById('form-card').style.display = 'none';
+  document.getElementById('loading-state').style.display = 'block';
+  document.getElementById('result-area').style.display = 'none';
+
+  const prompt = `Eres un tasador profesional de vehículos de segunda mano en España con datos actualizados de mercado (Coches.net, Autocasión, Wallapop, Milanuncios, concesionarios).
+
+Datos del vehículo a tasar:
+- Marca: ${marca}
+- Modelo: ${modelo}
+- Versión: ${version || 'No especificada'}
+- Año: ${anio}
+- Kilómetros: ${parseInt(kms).toLocaleString('es-ES')} km
+- Combustible: ${combustible}
+- Cambio: ${cambio || 'No especificado'}
+- Estado: ${estado}
+- Extras: ${extras || 'Sin extras relevantes'}
+
+Da una tasación realista para España 2025. Responde EXCLUSIVAMENTE con JSON válido, sin markdown ni texto adicional:
+{
+  "precio_medio": 12500,
+  "precio_minimo": 10500,
+  "precio_maximo": 14200,
+  "precio_concesionario": 15800,
+  "depreciacion_anual": 8,
+  "demanda": "alta",
+  "tiempo_venta_dias": 25,
+  "puntos_favor": ["punto 1", "punto 2", "punto 3"],
+  "puntos_contra": ["punto 1", "punto 2"],
+  "consejo_venta": "Consejo concreto y accionable para vender este coche al mejor precio en España.",
+  "analisis": "Análisis de 3-4 frases: posición del vehículo en el mercado, factores clave del precio, tendencia y demanda para este modelo concreto."
+}`;
+
+  try {
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 1000,
+        messages: [{ role: "user", content: prompt }]
+      })
+    });
+
+    const data = await response.json();
+    const raw = data.content[0].text.replace(/```json|```/g, '').trim();
+    const r = JSON.parse(raw);
+
+    // Fill results
+    document.getElementById('res-car-name').textContent =
+      `${marca.toUpperCase()} ${modelo.toUpperCase()}${version ? ' · ' + version : ''} · ${anio}`;
+
+    document.getElementById('res-price').textContent =
+      r.precio_medio.toLocaleString('es-ES') + ' €';
+
+    document.getElementById('res-range').textContent =
+      `Horquilla de mercado: ${r.precio_minimo.toLocaleString('es-ES')} € – ${r.precio_maximo.toLocaleString('es-ES')} €`;
+
+    const demandMap = {
+      alta: ['high', 'Alta demanda'],
+      media: ['mid', 'Demanda media'],
+      baja: ['low', 'Baja demanda']
+    };
+    const [dClass, dLabel] = demandMap[r.demanda] || ['mid', 'Demanda media'];
+    const demBadge = document.getElementById('res-demand');
+    demBadge.className = `demand-badge ${dClass}`;
+    demBadge.textContent = dLabel;
+
+    document.getElementById('res-metrics').innerHTML = `
+      <div class="metric-box">
+        <div class="metric-label">En concesionario</div>
+        <div class="metric-val">${r.precio_concesionario.toLocaleString('es-ES')} €</div>
+      </div>
+      <div class="metric-box">
+        <div class="metric-label">Depreciación anual</div>
+        <div class="metric-val">${r.depreciacion_anual}%</div>
+      </div>
+      <div class="metric-box">
+        <div class="metric-label">Tiempo de venta</div>
+        <div class="metric-val">${r.tiempo_venta_dias} días</div>
+      </div>`;
+
+    document.getElementById('res-pros').innerHTML =
+      (r.puntos_favor || []).map(p => `<li>${p}</li>`).join('');
+
+    document.getElementById('res-cons').innerHTML =
+      (r.puntos_contra || []).map(p => `<li>${p}</li>`).join('');
+
+    document.getElementById('res-consejo').textContent = r.consejo_venta;
+    document.getElementById('res-analisis').textContent = r.analisis;
+
+    document.getElementById('loading-state').style.display = 'none';
+    document.getElementById('result-area').style.display = 'block';
+
+  } catch(e) {
+    document.getElementById('loading-state').style.display = 'none';
+    document.getElementById('form-card').style.display = 'block';
+    err.textContent = 'Error al obtener la tasación. Inténtalo de nuevo.';
+    err.style.display = 'block';
+    document.getElementById('btn-tasar').disabled = false;
+  }
+}
+
+function reset() {
+  document.getElementById('result-area').style.display = 'none';
+  document.getElementById('form-card').style.display = 'block';
+  document.getElementById('btn-tasar').disabled = false;
+  document.getElementById('error-msg').style.display = 'none';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
